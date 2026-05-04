@@ -43,6 +43,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: admin.php");
         exit;
     }
+
+   if (isset($_POST['delete_user'])) {
+    $userId = $_POST['user_id'];
+
+    if ($userId == $_SESSION['user_id']) {
+        header("Location: admin.php");
+        exit;
+    }
+
+    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+
+    header("Location: admin.php");
+    exit;
+}
 }
 
 $stmt = $pdo->query("
@@ -58,6 +73,9 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $serviceStmt = $pdo->query("SELECT * FROM services ORDER BY id DESC");
 $services = $serviceStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$userStmt = $pdo->query("SELECT * FROM users ORDER BY id DESC");
+$users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 <!DOCTYPE html>
@@ -108,6 +126,8 @@ $services = $serviceStmt->fetchAll(PDO::FETCH_ASSOC);
                         <button type="submit" name="delete_service" onclick="return confirm('Willst du diesen Service wirklich löschen?')">
                             Service löschen
                         </button>
+
+
                         <a href="edit_service.php?id=<?= $service['id'] ?>">Bearbeiten</a>
                     </form>
                 </div>
@@ -134,6 +154,25 @@ $services = $serviceStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <h2>Benutzer verwalten</h2>
+
+<div class="cards">
+    <?php foreach ($users as $user): ?>
+        <div class="card">
+            <h3><?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h3>
+            <p><?= htmlspecialchars($user['email']) ?></p>
+            <p>Rolle: <?= htmlspecialchars($user['role']) ?></p>
+
+            <form method="POST">
+                <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                <button type="submit" name="delete_user" onclick="return confirm('User wirklich löschen?')">
+                    Benutzer löschen
+                </button>
+            </form>
+        </div>
+    <?php endforeach; ?>
+</div>
     </section>
 </main>
 
