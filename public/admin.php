@@ -108,6 +108,7 @@ $services = $serviceStmt->fetchAll(PDO::FETCH_ASSOC);
                         <button type="submit" name="delete_service" onclick="return confirm('Willst du diesen Service wirklich löschen?')">
                             Service löschen
                         </button>
+                        <a href="edit_service.php?id=<?= $service['id'] ?>">Bearbeiten</a>
                     </form>
                 </div>
             <?php endforeach; ?>
