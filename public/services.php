@@ -43,7 +43,7 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="index.php">Startseite</a></li>
             <li><a href="services.php">Angebote</a></li>
             <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
-            <li><a href="login.php">Login</a></li>
+            <li><a href="logout.php">Logout</a></li>
         </ul>
     </nav>
 </header>
