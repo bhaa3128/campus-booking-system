@@ -50,21 +50,24 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <h2>Meine Buchungen</h2>
 
         <div class="cards">
-            <?php foreach ($bookings as $booking): ?>
-                <div class="card">
-                    <h3><?= htmlspecialchars($booking['title']) ?></h3>
-                    <p><?= htmlspecialchars($booking['description']) ?></p>
-                    <p><?= htmlspecialchars($booking['price']) ?> €</p>
-                    <small>Gebucht am: <?= $booking['created_at'] ?></small>
+    <?php if (count($bookings) === 0): ?>
+        <p>Keine Buchungen vorhanden.</p>
+    <?php else: ?>
+        <?php foreach ($bookings as $booking): ?>
+            <div class="card">
+                <h3><?= htmlspecialchars($booking['title']) ?></h3>
+                <p><?= htmlspecialchars($booking['description']) ?></p>
+                <p><?= htmlspecialchars($booking['price']) ?> €</p>
+                <small>Gebucht am: <?= htmlspecialchars($booking['created_at']) ?></small>
 
-                    <form method="POST">
-                         <input type="hidden" name="booking_id" value="<?= htmlspecialchars($booking['id']) ?>">
-                        <button type="submit">Löschen</button>
-                    </form>
-                </div>
-            <?php endforeach; ?>
-        </div>
-
+                <form method="POST">
+                    <input type="hidden" name="booking_id" value="<?= htmlspecialchars($booking['id']) ?>">
+                    <button type="submit">Löschen</button>
+                </form>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
   
     </section>
 </main>
