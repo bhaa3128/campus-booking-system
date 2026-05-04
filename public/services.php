@@ -1,5 +1,12 @@
 <?php
 
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 require_once __DIR__ . '/../app/Models/Database.php';
 
 $pdo = Database::connect();
@@ -8,8 +15,10 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $serviceId = $_POST['service_id'];
 
-    $stmt = $pdo->prepare("INSERT INTO bookings (service_id) VALUES (?)");
-    $stmt->execute([$serviceId]);
+    $userId = $_SESSION['user_id'];
+
+$stmt = $pdo->prepare("INSERT INTO bookings (user_id, service_id) VALUES (?, ?)");
+$stmt->execute([$userId, $serviceId]);
 
     $message = 'Buchung erfolgreich!';
 }
@@ -33,9 +42,8 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <ul>
             <li><a href="index.php">Startseite</a></li>
             <li><a href="services.php">Angebote</a></li>
-            <a href="meine_buchungen.php">Meine Buchungen</a>
-            <li><a href="#">Kontakt</a></li>
-            <li><a href="#">Login</a></li>
+            <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
+            <li><a href="login.php">Login</a></li>
         </ul>
     </nav>
 </header>
