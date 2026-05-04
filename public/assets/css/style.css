@@ -64,3 +64,11 @@ nav a {
     width: 200px;
     border-radius: 8px;
 }
+.success-message {
+    background-color: #dcfce7;
+    color: #166534;
+    padding: 12px;
+    width: fit-content;
+    margin: 20px auto;
+    border-radius: 8px;
+}

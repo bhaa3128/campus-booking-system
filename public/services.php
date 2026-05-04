@@ -1,3 +1,23 @@
+<?php
+
+require_once __DIR__ . '/../app/Models/Database.php';
+
+$pdo = Database::connect();
+$message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $serviceId = $_POST['service_id'];
+
+    $stmt = $pdo->prepare("INSERT INTO bookings (service_id) VALUES (?)");
+    $stmt->execute([$serviceId]);
+
+    $message = 'Buchung erfolgreich!';
+}
+
+$stmt = $pdo->query("SELECT * FROM services");
+$services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -13,7 +33,7 @@
         <ul>
             <li><a href="index.php">Startseite</a></li>
             <li><a href="services.php">Angebote</a></li>
-            <li><a href="#">Meine Buchungen</a></li>
+            <a href="meine_buchungen.php">Meine Buchungen</a>
             <li><a href="#">Kontakt</a></li>
             <li><a href="#">Login</a></li>
         </ul>
@@ -24,24 +44,23 @@
     <section class="services">
         <h2>Unsere Angebote</h2>
 
+        <?php if ($message): ?>
+            <p class="success-message"><?= htmlspecialchars($message) ?></p>
+        <?php endif; ?>
+
         <div class="cards">
-            <div class="card">
-                <h3>Studienraum</h3>
-                <p>Ruhiger Raum zum Lernen</p>
-                <button>Buchen</button>
-            </div>
+            <?php foreach ($services as $service): ?>
+                <div class="card">
+                    <h3><?= htmlspecialchars($service['title']) ?></h3>
+                    <p><?= htmlspecialchars($service['description']) ?></p>
+                    <p><?= htmlspecialchars($service['price']) ?> €</p>
 
-            <div class="card">
-                <h3>Workshop</h3>
-                <p>Git & Docker Workshop</p>
-                <button>Buchen</button>
-            </div>
-
-            <div class="card">
-                <h3>Beratung</h3>
-                <p>Individuelle Studienberatung</p>
-                <button>Buchen</button>
-            </div>
+                    <form method="POST">
+                        <input type="hidden" name="service_id" value="<?= htmlspecialchars($service['id']) ?>">
+                        <button type="submit">Buchen</button>
+                    </form>
+                </div>
+            <?php endforeach; ?>
         </div>
     </section>
 </main>
