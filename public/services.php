@@ -17,10 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $userId = $_SESSION['user_id'];
 
-$stmt = $pdo->prepare("INSERT INTO bookings (user_id, service_id) VALUES (?, ?)");
-$stmt->execute([$userId, $serviceId]);
+$checkStmt = $pdo->prepare("SELECT id FROM bookings WHERE user_id = ? AND service_id = ?");
+$checkStmt->execute([$userId, $serviceId]);
+
+if ($checkStmt->fetch()) {
+    $message = 'Diese Buchung existiert bereits.';
+} else {
+    $stmt = $pdo->prepare("INSERT INTO bookings (user_id, service_id) VALUES (?, ?)");
+    $stmt->execute([$userId, $serviceId]);
 
     $message = 'Buchung erfolgreich!';
+}
 }
 
 $stmt = $pdo->query("SELECT * FROM services");
