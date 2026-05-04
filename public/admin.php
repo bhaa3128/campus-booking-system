@@ -11,6 +11,16 @@ require_once __DIR__ . '/../app/Models/Database.php';
 
 $pdo = Database::connect();
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $bookingId = $_POST['booking_id'];
+
+    $stmt = $pdo->prepare("DELETE FROM bookings WHERE id = ?");
+    $stmt->execute([$bookingId]);
+
+    header("Location: admin.php");
+    exit;
+}
+
 $stmt = $pdo->query("
     SELECT bookings.id, users.first_name, users.last_name, users.email,
            services.title, services.price, bookings.created_at
@@ -56,6 +66,13 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p><?= htmlspecialchars($booking['email']) ?></p>
                     <p><?= htmlspecialchars($booking['price']) ?> €</p>
                     <small>Gebucht am: <?= htmlspecialchars($booking['created_at']) ?></small>
+
+                    <form method="POST">
+                        <input type="hidden" name="booking_id" value="<?= htmlspecialchars($booking['id']) ?>">
+                        <button type="submit" onclick="return confirm('Willst du diese Buchung wirklich löschen?')">
+        Löschen
+    </button>
+</form>
                 </div>
             <?php endforeach; ?>
         </div>

@@ -51,6 +51,10 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="services.php">Angebote</a></li>
             <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
             <li><a href="logout.php">Logout</a></li>
+            
+            <?php if ($_SESSION['role'] === 'admin'): ?>
+                <li><a href="admin.php">Admin Panel</a></li>
+            <?php endif; ?>
         </ul>
     </nav>
 </header>
