@@ -53,6 +53,8 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="services.php">Angebote</a></li>
             <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
             <li><a href="logout.php">Logout</a></li>
+            <li><a href="profile.php">Profil</a></li>
+            <li><a href="shop.php">Shop</a></li>
         </ul>
     </nav>
 </header>

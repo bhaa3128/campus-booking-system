@@ -45,18 +45,26 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <header>
     <nav>
-        <h1>Campus Booking</h1>
-        <ul>
-            <li><a href="index.php">Startseite</a></li>
-            <li><a href="services.php">Angebote</a></li>
-            <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
-            <li><a href="logout.php">Logout</a></li>
-            
-            <?php if ($_SESSION['role'] === 'admin'): ?>
-                <li><a href="admin.php">Admin Panel</a></li>
+    <h1>Campus Booking</h1>
+
+    <ul class="nav-links">
+        <li><a href="index.php">Startseite</a></li>
+        <li><a href="services.php">Angebote</a></li>
+        <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
+        <li><a href="logout.php">Logout</a></li>
+        <li><a href="shop.php">Shop</a></li>
+    </ul>
+
+    <div class="nav-profile">
+        <a href="profile.php">
+            <?php if (!empty($_SESSION['profile_image'])): ?>
+                <img src="<?= htmlspecialchars($_SESSION['profile_image']) ?>" class="avatar">
+            <?php else: ?>
+                <div class="avatar default">👤</div>
             <?php endif; ?>
-        </ul>
-    </nav>
+        </a>
+    </div>
+</nav>
 </header>
 
 <main>

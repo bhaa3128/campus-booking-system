@@ -2,6 +2,10 @@
 
 session_start();
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: services.php");
     exit;
@@ -12,6 +16,10 @@ require_once __DIR__ . '/../app/Models/Database.php';
 $pdo = Database::connect();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('Ungültige Anfrage.');
+    }
+
     if (isset($_POST['add_service'])) {
         $title = $_POST['title'];
         $description = $_POST['description'];
@@ -44,20 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-   if (isset($_POST['delete_user'])) {
-    $userId = $_POST['user_id'];
+    if (isset($_POST['delete_user'])) {
+        $userId = $_POST['user_id'];
 
-    if ($userId == $_SESSION['user_id']) {
+        if ($userId == $_SESSION['user_id']) {
+            header("Location: admin.php");
+            exit;
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+
         header("Location: admin.php");
         exit;
     }
-
-    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
-
-    header("Location: admin.php");
-    exit;
-}
 }
 
 $stmt = $pdo->query("
@@ -95,6 +103,7 @@ $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="services.php">Angebote</a></li>
             <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
             <li><a href="logout.php">Logout</a></li>
+            <li><a href="shop.php">Shop</a></li>
         </ul>
     </nav>
 </header>
@@ -106,6 +115,7 @@ $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
         <h2>Service hinzufügen</h2>
 
         <form method="POST" class="auth-form">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             <input type="text" name="title" placeholder="Titel" required>
             <input type="text" name="description" placeholder="Beschreibung" required>
             <input type="number" name="price" placeholder="Preis" required>
@@ -122,14 +132,14 @@ $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
                     <p><?= htmlspecialchars($service['price']) ?> €</p>
 
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                         <input type="hidden" name="service_id" value="<?= htmlspecialchars($service['id']) ?>">
                         <button type="submit" name="delete_service" onclick="return confirm('Willst du diesen Service wirklich löschen?')">
                             Service löschen
                         </button>
-
-
-                        <a href="edit_service.php?id=<?= $service['id'] ?>">Bearbeiten</a>
                     </form>
+
+                    <a href="edit_service.php?id=<?= htmlspecialchars($service['id']) ?>">Bearbeiten</a>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -146,6 +156,7 @@ $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
                     <small>Gebucht am: <?= htmlspecialchars($booking['created_at']) ?></small>
 
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                         <input type="hidden" name="booking_id" value="<?= htmlspecialchars($booking['id']) ?>">
                         <button type="submit" name="delete_booking" onclick="return confirm('Willst du diese Buchung wirklich löschen?')">
                             Löschen
@@ -157,22 +168,23 @@ $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
 
         <h2>Benutzer verwalten</h2>
 
-<div class="cards">
-    <?php foreach ($users as $user): ?>
-        <div class="card">
-            <h3><?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h3>
-            <p><?= htmlspecialchars($user['email']) ?></p>
-            <p>Rolle: <?= htmlspecialchars($user['role']) ?></p>
+        <div class="cards">
+            <?php foreach ($users as $user): ?>
+                <div class="card">
+                    <h3><?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h3>
+                    <p><?= htmlspecialchars($user['email']) ?></p>
+                    <p>Rolle: <?= htmlspecialchars($user['role']) ?></p>
 
-            <form method="POST">
-                <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
-                <button type="submit" name="delete_user" onclick="return confirm('User wirklich löschen?')">
-                    Benutzer löschen
-                </button>
-            </form>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                        <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                        <button type="submit" name="delete_user" onclick="return confirm('User wirklich löschen?')">
+                            Benutzer löschen
+                        </button>
+                    </form>
+                </div>
+            <?php endforeach; ?>
         </div>
-    <?php endforeach; ?>
-</div>
     </section>
 </main>
 
