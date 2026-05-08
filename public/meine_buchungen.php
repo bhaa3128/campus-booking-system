@@ -11,31 +11,95 @@ require_once __DIR__ . '/../app/Models/Database.php';
 
 $pdo = Database::connect();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $bookingId = $_POST['booking_id'];
-
-    $userId = $_SESSION['user_id'];
-
-$stmt = $pdo->prepare("DELETE FROM bookings WHERE id = ? AND user_id = ?");
-$stmt->execute([$bookingId, $userId]);
-
-    header("Location: meine_buchungen.php");
-    exit;
-}
-
 $userId = $_SESSION['user_id'];
 
-$stmt = $pdo->prepare("
-    SELECT bookings.id, services.title, services.description, services.price, bookings.created_at
-    FROM bookings
-    JOIN services ON bookings.service_id = services.id
-    WHERE bookings.user_id = ?
-    ORDER BY bookings.created_at DESC
-");
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-$stmt->execute([$userId]);
-$bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (isset($_POST['cancel_room_booking'])) {
+        $bookingId = $_POST['booking_id'];
+
+        $roomIdStmt = $pdo->prepare("
+            SELECT room_id
+            FROM room_bookings
+            WHERE id = ?
+            AND user_id = ?
+        ");
+        $roomIdStmt->execute([$bookingId, $userId]);
+        $roomId = $roomIdStmt->fetchColumn();
+
+        if ($roomId) {
+            $deleteStmt = $pdo->prepare("
+                DELETE FROM room_bookings
+                WHERE id = ?
+                AND user_id = ?
+            ");
+            $deleteStmt->execute([$bookingId, $userId]);
+
+            $updateRoomStmt = $pdo->prepare("
+                UPDATE rooms
+                SET status = 'frei'
+                WHERE id = ?
+            ");
+            $updateRoomStmt->execute([$roomId]);
+        }
+
+        header("Location: meine_buchungen.php");
+        exit;
+    }
+
+    if (isset($_POST['cancel_facility_booking'])) {
+        $bookingId = $_POST['booking_id'];
+
+        $deleteStmt = $pdo->prepare("
+            DELETE FROM facility_bookings
+            WHERE id = ?
+            AND user_id = ?
+        ");
+        $deleteStmt->execute([$bookingId, $userId]);
+
+        header("Location: meine_buchungen.php");
+        exit;
+    }
+}
+
+$roomStmt = $pdo->prepare("
+    SELECT 
+        room_bookings.id,
+        room_bookings.start_date,
+        room_bookings.end_date,
+        room_bookings.status,
+        rooms.room_number,
+        rooms.room_type,
+        rooms.price,
+        buildings.name AS building_name
+    FROM room_bookings
+    JOIN rooms ON room_bookings.room_id = rooms.id
+    JOIN buildings ON rooms.building_id = buildings.id
+    WHERE room_bookings.user_id = ?
+    ORDER BY room_bookings.created_at DESC
+");
+$roomStmt->execute([$userId]);
+$roomBookings = $roomStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$facilityStmt = $pdo->prepare("
+    SELECT 
+        facility_bookings.id,
+        facility_bookings.booking_date,
+        facility_bookings.status,
+        facilities.name AS facility_name,
+        facilities.opening_hours,
+        buildings.name AS building_name
+    FROM facility_bookings
+    JOIN facilities ON facility_bookings.facility_id = facilities.id
+    JOIN buildings ON facilities.building_id = buildings.id
+    WHERE facility_bookings.user_id = ?
+    ORDER BY facility_bookings.created_at DESC
+");
+$facilityStmt->execute([$userId]);
+$facilityBookings = $facilityStmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -45,48 +109,91 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 
-<header>
-    <nav>
-        <h1>Campus Booking</h1>
-        <ul>
-            <li><a href="index.php">Startseite</a></li>
-            <li><a href="services.php">Angebote</a></li>
-            <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
-            <li><a href="logout.php">Logout</a></li>
-            <li><a href="profile.php">Profil</a></li>
-            <li><a href="shop.php">Shop</a></li>
-        </ul>
-    </nav>
-</header>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <main>
     <section class="services">
+
         <h2>Meine Buchungen</h2>
 
+        <h2>Zimmerbuchungen</h2>
+
         <div class="cards">
-            <?php if (count($bookings) === 0): ?>
-                <p>Keine Buchungen vorhanden.</p>
+            <?php if (empty($roomBookings)): ?>
+                <div class="card">
+                    <p>Du hast noch keine Zimmer gebucht.</p>
+                </div>
             <?php else: ?>
-                <?php foreach ($bookings as $booking): ?>
+                <?php foreach ($roomBookings as $booking): ?>
                     <div class="card">
-                        <h3><?= htmlspecialchars($booking['title']) ?></h3>
-                        <p><?= htmlspecialchars($booking['description']) ?></p>
-                        <p><?= htmlspecialchars($booking['price']) ?> €</p>
-                        <small>Gebucht am: <?= htmlspecialchars($booking['created_at']) ?></small>
+                        <h3>Zimmer <?= htmlspecialchars($booking['room_number']) ?></h3>
+
+                        <p>Gebäude: <?= htmlspecialchars($booking['building_name']) ?></p>
+                        <p>Typ: <?= htmlspecialchars($booking['room_type']) ?></p>
+                        <p>Preis: <?= htmlspecialchars($booking['price']) ?> €</p>
+                        <p>Von: <?= htmlspecialchars($booking['start_date']) ?></p>
+                        <p>Bis: <?= htmlspecialchars($booking['end_date']) ?></p>
+                        <p>Status: <?= htmlspecialchars($booking['status']) ?></p>
 
                         <form method="POST">
-                            <input type="hidden" name="booking_id" value="<?= htmlspecialchars($booking['id']) ?>">
-                            <button type="submit" onclick="return confirm('Willst du diese Buchung wirklich löschen?')">
-                                Löschen
+                            <input
+                                type="hidden"
+                                name="booking_id"
+                                value="<?= htmlspecialchars($booking['id']) ?>"
+                            >
+
+                            <button
+                                type="submit"
+                                name="cancel_room_booking"
+                                onclick="return confirm('Willst du diese Zimmerbuchung wirklich stornieren?')"
+                            >
+                                Buchung stornieren
                             </button>
                         </form>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+
+        <h2>Einrichtungsbuchungen</h2>
+
+        <div class="cards">
+            <?php if (empty($facilityBookings)): ?>
+                <div class="card">
+                    <p>Du hast noch keine Einrichtungen gebucht.</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($facilityBookings as $booking): ?>
+                    <div class="card">
+                        <h3><?= htmlspecialchars($booking['facility_name']) ?></h3>
+
+                        <p>Gebäude: <?= htmlspecialchars($booking['building_name']) ?></p>
+                        <p>Buchungsdatum: <?= htmlspecialchars($booking['booking_date']) ?></p>
+                        <p>Öffnungszeiten: <?= htmlspecialchars($booking['opening_hours']) ?></p>
+                        <p>Status: <?= htmlspecialchars($booking['status']) ?></p>
+
+                        <form method="POST">
+                            <input
+                                type="hidden"
+                                name="booking_id"
+                                value="<?= htmlspecialchars($booking['id']) ?>"
+                            >
+
+                            <button
+                                type="submit"
+                                name="cancel_facility_booking"
+                                onclick="return confirm('Willst du diese Einrichtungsbuchung wirklich stornieren?')"
+                            >
+                                Buchung stornieren
+                            </button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
     </section>
 </main>
 
 </body>
 </html>
-

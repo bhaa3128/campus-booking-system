@@ -11,6 +11,23 @@ require_once __DIR__ . '/../app/Models/Database.php';
 $pdo = Database::connect();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
+    $image = $_FILES['image'];
+
+    if ($image['error'] === 0) {
+        $fileName = time() . '_' . basename($image['name']);
+        $filePath = 'uploads/' . $fileName;
+
+        move_uploaded_file($image['tmp_name'], $filePath);
+
+        $stmt = $pdo->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
+        $stmt->execute([$filePath, $_SESSION['user_id']]);
+
+        header("Location: profile.php");
+        exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
 
     $image = $_FILES['image'];
 
@@ -50,18 +67,7 @@ $_SESSION['profile_image'] = $user['profile_image'];
 </head>
 <body>
 
-<header>
-    <nav>
-        <h1>Campus Booking</h1>
-        <ul>
-            <li><a href="index.php">Startseite</a></li>
-            <li><a href="services.php">Angebote</a></li>
-            <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
-            <li><a href="logout.php">Logout</a></li>
-            <li><a href="shop.php">Shop</a></li>
-        </ul>
-    </nav>
-</header>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <main>
     <h2>Mein Profil</h2>
@@ -74,6 +80,17 @@ $_SESSION['profile_image'] = $user['profile_image'];
 
         <?php if (!empty($user['profile_image'])): ?>
     <img src="<?= htmlspecialchars($user['profile_image']) ?>" width="120" style="border-radius:50%;">
+
+    <?php if (!empty($user['profile_image'])): ?>
+    <img src="<?= htmlspecialchars($user['profile_image']) ?>" class="profile-image">
+<?php else: ?>
+    <div class="profile-image-placeholder">👤</div>
+<?php endif; ?>
+
+<form method="POST" enctype="multipart/form-data" class="auth-form">
+    <input type="file" name="image" accept="image/png, image/jpeg, image/jpg" required>
+    <button type="submit">Profilbild speichern</button>
+</form>
 <?php endif; ?>
     </div>
 

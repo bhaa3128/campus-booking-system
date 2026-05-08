@@ -27,6 +27,16 @@ if ($checkStmt->fetch()) {
     $stmt->execute([$userId, $serviceId]);
 
     $message = 'Buchung erfolgreich!';
+    $recommendationStmt = $pdo->prepare("
+   SELECT products.id, products.title, products.price, recommendations.reason
+    FROM recommendations
+    JOIN products ON recommendations.product_id = products.id
+    WHERE recommendations.service_id = ?
+");
+$recommendationStmt->execute([$serviceId]);
+$recommendations = $recommendationStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$_SESSION['recommendations'] = $recommendations;
 }
 }
 
@@ -43,29 +53,7 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 
-<header>
-    <nav>
-    <h1>Campus Booking</h1>
-
-    <ul class="nav-links">
-        <li><a href="index.php">Startseite</a></li>
-        <li><a href="services.php">Angebote</a></li>
-        <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
-        <li><a href="logout.php">Logout</a></li>
-        <li><a href="shop.php">Shop</a></li>
-    </ul>
-
-    <div class="nav-profile">
-        <a href="profile.php">
-            <?php if (!empty($_SESSION['profile_image'])): ?>
-                <img src="<?= htmlspecialchars($_SESSION['profile_image']) ?>" class="avatar">
-            <?php else: ?>
-                <div class="avatar default">👤</div>
-            <?php endif; ?>
-        </a>
-    </div>
-</nav>
-</header>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <main>
     <section class="services">
@@ -74,6 +62,26 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php if ($message): ?>
             <p class="success-message"><?= htmlspecialchars($message) ?></p>
         <?php endif; ?>
+
+       <?php if (!empty($_SESSION['recommendations'])): ?>
+    <h2>Passend zu deiner Buchung</h2>
+
+    <div class="cards">
+        <?php foreach ($_SESSION['recommendations'] as $rec): ?>
+            <div class="card">
+                <h3><?= htmlspecialchars($rec['title']) ?></h3>
+                <p><?= htmlspecialchars($rec['reason']) ?></p>
+                <p><?= htmlspecialchars($rec['price']) ?> €</p>
+
+                <a href="product.php?id=<?= htmlspecialchars($rec['id']) ?>">
+                    <button>Zum Produkt</button>
+                </a>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <?php unset($_SESSION['recommendations']); ?>
+<?php endif; ?>
 
         <div class="cards">
             <?php foreach ($services as $service): ?>

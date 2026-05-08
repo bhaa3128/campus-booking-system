@@ -7,24 +7,19 @@
 </head>
 <body>
 
-<header>
-    <nav>
-        <h1>Campus Booking</h1>
-        <ul>
-            <li><a href="#">Startseite</a></li>
-            <li><a href="#">Angebote</a></li>
-            <li><a href="#">Meine Buchungen</a></li>
-            <li><a href="#">Kontakt</a></li>
-            <li><a href="#">Login</a></li>
-        </ul>
-    </nav>
-</header>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <main>
     <section class="hero">
-        <h2>Willkommen beim Campus Booking System</h2>
+        <h2>Willkommen in deinem Studentenwohnheim</h2>
+<p>Finde dein Zimmer, entdecke Einrichtungen und buche alles online.</p>
+<a href="rooms.php">
+    <button>Zimmer ansehen</button>
+</a>
         <p>Buche Räume, Workshops und Beratungstermine einfach online.</p>
-        <button>Jetzt buchen</button>
+        <a href="rooms.php">
+    <button>Jetzt buchen</button>
+</a>
     </section>
 </main>
 
