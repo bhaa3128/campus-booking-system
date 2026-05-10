@@ -11,30 +11,46 @@ require_once __DIR__ . '/../app/Models/Database.php';
 
 $pdo = Database::connect();
 
-$roomId = $_GET['id'] ?? null;
+$categoryId = $_GET['category_id'] ?? null;
 
-if (!$roomId) {
-    die("Zimmer nicht gefunden");
+if (!$categoryId) {
+    die("Zimmerkategorie nicht gefunden");
 }
 
-$stmt = $pdo->prepare("
+$categoryStmt = $pdo->prepare("
+    SELECT *
+    FROM room_categories
+    WHERE id = ?
+");
+$categoryStmt->execute([$categoryId]);
+$category = $categoryStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$category) {
+    die("Zimmerkategorie nicht gefunden");
+}
+
+$availableRoomStmt = $pdo->prepare("
     SELECT rooms.*, buildings.name AS building_name
     FROM rooms
     JOIN buildings ON rooms.building_id = buildings.id
-    WHERE rooms.id = ?
+    WHERE rooms.category_id = ?
+    AND rooms.status = 'frei'
+    ORDER BY rooms.id ASC
+    LIMIT 1
 ");
-$stmt->execute([$roomId]);
-$room = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$room) {
-    die("Zimmer nicht gefunden");
+$availableRoomStmt->execute([$categoryId]);
+$availableRoom = $availableRoomStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$availableRoom) {
+    die("Aktuell ist kein Zimmer in dieser Kategorie verfügbar.");
 }
 
-if ($room['status'] !== 'frei') {
-    die("Dieses Zimmer ist nicht verfügbar.");
-}
-
-$userStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$userStmt = $pdo->prepare("
+    SELECT *
+    FROM users
+    WHERE id = ?
+");
 $userStmt->execute([$_SESSION['user_id']]);
 $user = $userStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -46,6 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $endDate = $_POST['end_date'];
     $paymentMethod = $_POST['payment_method'];
     $comment = $_POST['comment'];
+
+    $roomId = $availableRoom['id'];
 
     $bookingStmt = $pdo->prepare("
         INSERT INTO room_bookings
@@ -75,12 +93,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $comment
     ]);
 
-    $updateStmt = $pdo->prepare("
+    $updateRoomStmt = $pdo->prepare("
         UPDATE rooms
         SET status = 'reserviert'
         WHERE id = ?
     ");
-    $updateStmt->execute([$roomId]);
+    $updateRoomStmt->execute([$roomId]);
+
+    $updateCategoryStmt = $pdo->prepare("
+        UPDATE room_categories
+        SET available_rooms = GREATEST(available_rooms - 1, 0)
+        WHERE id = ?
+    ");
+    $updateCategoryStmt->execute([$categoryId]);
 
     header("Location: meine_buchungen.php");
     exit;
@@ -92,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Anmeldung Zimmer <?= htmlspecialchars($room['room_number']) ?></title>
+    <title>Anmeldung <?= htmlspecialchars($category['name']) ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -100,88 +125,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <main>
-    <section class="services">
+<section class="services">
 
-        <h2>Anmeldung für Zimmer <?= htmlspecialchars($room['room_number']) ?></h2>
+    <h2>Anmeldung für <?= htmlspecialchars($category['name']) ?></h2>
 
-        <div class="card">
-            <p><strong>Gebäude:</strong> <?= htmlspecialchars($room['building_name']) ?></p>
-            <p><strong>Typ:</strong> <?= htmlspecialchars($room['room_type']) ?></p>
-            <p><strong>Preis:</strong> <?= htmlspecialchars($room['price']) ?> €</p>
-        </div>
+    <div class="card">
+        <p><strong>Kategorie:</strong> <?= htmlspecialchars($category['name']) ?></p>
+        <p><strong>Beschreibung:</strong> <?= htmlspecialchars($category['description']) ?></p>
+        <p><strong>Preis:</strong> <?= htmlspecialchars($category['price']) ?> €</p>
+        <p><strong>Verfügbare Zimmer:</strong> <?= htmlspecialchars($category['available_rooms']) ?></p>
 
-        <form method="POST" class="auth-form">
+        <p style="color:#cbd5e1;">
+            Das konkrete Zimmer wird automatisch vom System zugewiesen.
+        </p>
+    </div>
 
-            <input
-                type="text"
-                value="<?= htmlspecialchars($user['first_name'] ?? '') ?>"
-                disabled
-            >
+    <form method="POST" class="auth-form">
 
-            <input
-                type="text"
-                value="<?= htmlspecialchars($user['last_name'] ?? '') ?>"
-                disabled
-            >
+        <input
+            type="text"
+            value="<?= htmlspecialchars($user['first_name'] ?? '') ?>"
+            disabled
+        >
 
-            <input
-                type="email"
-                value="<?= htmlspecialchars($user['email'] ?? '') ?>"
-                disabled
-            >
+        <input
+            type="text"
+            value="<?= htmlspecialchars($user['last_name'] ?? '') ?>"
+            disabled
+        >
 
-            <input
-                type="text"
-                name="phone"
-                placeholder="Telefonnummer"
-                required
-            >
+        <input
+            type="email"
+            value="<?= htmlspecialchars($user['email'] ?? '') ?>"
+            disabled
+        >
 
-            <input
-                type="text"
-                name="address"
-                placeholder="Adresse"
-                required
-            >
+        <input
+            type="text"
+            name="phone"
+            placeholder="Telefonnummer"
+            required
+        >
 
-            <input
-                type="date"
-                name="birthdate"
-                required
-            >
+        <input
+            type="text"
+            name="address"
+            placeholder="Adresse"
+            required
+        >
 
-            <input
-                type="date"
-                name="start_date"
-                required
-            >
+        <input
+            type="date"
+            name="birthdate"
+            required
+        >
 
-            <input
-                type="date"
-                name="end_date"
-                required
-            >
+        <input
+            type="date"
+            name="start_date"
+            required
+        >
 
-            <select name="payment_method" required>
-                <option value="">Zahlungsmethode auswählen</option>
-                <option value="PayPal">PayPal</option>
-                <option value="Kreditkarte">Kreditkarte</option>
-                <option value="SEPA">SEPA Lastschrift</option>
-                <option value="Bar">Bar vor Ort</option>
-            </select>
+        <input
+            type="date"
+            name="end_date"
+            required
+        >
 
-            <textarea
-                name="comment"
-                placeholder="Kommentar oder besondere Wünsche..."
-            ></textarea>
+        <select name="payment_method" required>
+            <option value="">Zahlungsmethode auswählen</option>
+            <option value="PayPal">PayPal</option>
+            <option value="Kreditkarte">Kreditkarte</option>
+            <option value="SEPA">SEPA Lastschrift</option>
+            <option value="Bar">Bar vor Ort</option>
+        </select>
 
-            <button type="submit">
-                Anmeldung absenden
-            </button>
+        <textarea
+            name="comment"
+            placeholder="Kommentar oder besondere Wünsche..."
+        ></textarea>
 
-        </form>
+        <button type="submit">
+            Anmeldung absenden
+        </button>
 
-    </section>
+    </form>
+
+</section>
 </main>
 
 </body>

@@ -54,8 +54,8 @@ function loadProducts() {
                     ? `Lagerbestand: ${product.stock}`
                     : 'Nicht verfügbar';
 
-                const buyButton = product.stock > 0
-                    ? `<button onclick="buyProduct(${product.id})">Kaufen</button>`
+                const cartButton = product.stock > 0
+                    ? `<button onclick="addToCart(${product.id})">In den Warenkorb</button>`
                     : `<button disabled>Nicht verfügbar</button>`;
 
                 container.innerHTML += `
@@ -73,7 +73,7 @@ function loadProducts() {
 
                         <p>${stockText}</p>
 
-                        ${buyButton}
+                        ${cartButton}
 
                         <a href="product.php?id=${product.id}">
                             <button>Details ansehen</button>
@@ -84,22 +84,19 @@ function loadProducts() {
         });
 }
 
-function buyProduct(productId) {
-    fetch('api/buy.php', {
+function addToCart(productId) {
+    fetch('/api/add_to_cart.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ product_id: productId })
+        body: JSON.stringify({
+            product_id: productId
+        })
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            showToast("Produkt gekauft");
-            loadProducts();
-        } else {
-            showToast(data.message);
-        }
+        showToast(data.message);
     });
 }
 

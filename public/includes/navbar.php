@@ -14,12 +14,19 @@
             <li><a href="services.php">Angebote</a></li>
             <li><a href="shop.php">Shop</a></li>
             <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
+            <li><a href="cart.php">Warenkorb</a>‚</li>
 
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                 <li><a href="admin.php">Admin</a></li>
             <?php endif; ?>
         </ul>
+<div style="display:flex; align-items:center; gap:14px;">
 
+    <button id="themeToggle" class="theme-toggle-navbar" type="button">
+
+        🌙
+
+    </button>
         <div class="profile-menu">
             <button class="profile-button">
                 <?php if (!empty($_SESSION['profile_image'])): ?>
