@@ -637,3 +637,72 @@ window.addEventListener('load', () => {
     });
 
 });
+const loadMoreSocialButton = document.getElementById('loadMoreSocial');
+
+if (loadMoreSocialButton) {
+    loadMoreSocialButton.addEventListener('click', () => {
+        const socialWall = document.querySelector('.home-social-wall');
+
+        if (!socialWall) return;
+
+        socialWall.classList.toggle('show-more');
+
+        loadMoreSocialButton.textContent =
+            socialWall.classList.contains('show-more')
+                ? 'Show Less'
+                : 'Load More';
+    });
+}
+/* ANIMATED COUNTERS */
+
+const counters = document.querySelectorAll('.counter');
+
+if (counters.length > 0) {
+    counters.forEach(counter => {
+        const target = Number(counter.dataset.target);
+        let current = 0;
+
+        const increment = Math.max(1, Math.ceil(target / 60));
+
+        const updateCounter = () => {
+            current += increment;
+
+            if (current >= target) {
+                counter.textContent = target;
+            } else {
+                counter.textContent = current;
+                requestAnimationFrame(updateCounter);
+            }
+        };
+
+        updateCounter();
+    });
+}
+
+/* SIMPLE HERO IMAGE SLIDER */
+
+const premiumImages = document.querySelectorAll('.premium-campus-grid img');
+
+if (premiumImages.length > 0) {
+    const sliderImages = [
+        '/uploads/rooms/1778077889_room.jpg',
+        '/uploads/rooms/1778077889_room.jpg',
+        '/uploads/rooms/1778077889_room.jpg'
+    ];
+
+    let imageIndex = 0;
+
+    setInterval(() => {
+        imageIndex = (imageIndex + 1) % sliderImages.length;
+
+        premiumImages.forEach((img, index) => {
+            img.style.opacity = '0.45';
+
+            setTimeout(() => {
+                img.src = sliderImages[(imageIndex + index) % sliderImages.length];
+                img.style.opacity = '1';
+            }, 250);
+        });
+
+    }, 5000);
+}

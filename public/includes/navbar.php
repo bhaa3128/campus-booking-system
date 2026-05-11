@@ -12,9 +12,12 @@
             <li><a href="rooms.php">Zimmer</a></li>
             <li><a href="facilities.php">Einrichtungen</a></li>
             <li><a href="services.php">Angebote</a></li>
+            <li><a href="help.php">Hilfe</a></li>
             <li><a href="shop.php">Shop</a></li>
             <li><a href="meine_buchungen.php">Meine Buchungen</a></li>
-            <li><a href="cart.php">Warenkorb</a>‚</li>
+            <li><a href="cart.php">Warenkorb</a></li>
+            <li><a href="about.php">Über uns</a></li>
+            <li><a href="contact.php">Kontakt</a></li>
 
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                 <li><a href="admin.php">Admin</a></li>
