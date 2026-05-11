@@ -1,0 +1,18 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: UsePhpVersion@0
+  inputs:
+    versionSpec: '8.2'
+
+- script: |
+    composer install
+  displayName: 'Install dependencies'
+
+- script: |
+    vendor/bin/phpunit tests
+  displayName: 'Run PHPUnit tests'
