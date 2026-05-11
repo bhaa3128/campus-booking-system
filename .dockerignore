@@ -1,0 +1,11 @@
+.git
+.github
+.gitlab-ci.yml
+azure-pipelines.yml
+vendor
+node_modules
+.DS_Store
+.env
+.idea
+.vscode
+README.md
