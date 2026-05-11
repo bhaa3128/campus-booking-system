@@ -1,13 +1,24 @@
 image: php:8.2
 
 stages:
+  - install
   - test
 
+cache:
+  paths:
+    - vendor/
+
 before_script:
-  - apt-get update
-  - apt-get install -y unzip git curl
+  - apt-get update && apt-get install -y unzip git curl
   - curl -sS https://getcomposer.org/installer | php
-  - php composer.phar install
+
+install_dependencies:
+  stage: install
+  script:
+    - php composer.phar install
+  artifacts:
+    paths:
+      - vendor/
 
 phpunit_tests:
   stage: test
